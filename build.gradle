@@ -1,0 +1,54 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.h2database:h2:2.5.252'
+    implementation 'org.hibernate.orm:hibernate-core:6.6.59.Final'
+    implementation 'org.flywaydb:flyway-core:13.12.1'
+}
+
+application {
+    mainClass = 'com.example.spacetravel.Main'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(JavaExec).configureEach {
+    jvmArgs '-Duser.language=en', '-Duser.country=US'
+}
+
+tasks.register('migrateDb', JavaExec) {
+    group = 'application'
+    description = 'Apply Flyway migrations to the local H2 database'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.spacetravel.DatabaseMigrationService'
+}
+
+tasks.register('selfTest', JavaExec) {
+    group = 'verification'
+    description = 'Verify two migrations, seed counts, constraints and CRUD operations'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.example.spacetravel.SpaceTravelSelfTest'
+}
+
+tasks.named('check') {
+    dependsOn selfTest
+}
+
+// The local self-test is a Java main class rather than a JUnit test.
+tasks.named('test') {
+    failOnNoDiscoveredTests = false
+}
